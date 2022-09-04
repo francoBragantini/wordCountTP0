@@ -16,5 +16,7 @@ int main(int argc, char* argv[]) {
     }
     size_t words = counter->get_words();
     std::cout << words << std::endl;
+    delete input;
+    delete counter;
     return SUCCESS;
 }
