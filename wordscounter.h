@@ -1,24 +1,31 @@
 #ifndef __WORDSCOUNTER_H__
 #define __WORDSCOUNTER_H__
 
-#include <string>
 #include <fstream>
 
-// Tipo wordscounter_t: procesa cantidad de palabras dentro de un archivo.
-class Wordscounter {
-    size_t words;
+enum WordscounterState {
+    STATE_WAITING_WORD,
+    STATE_IN_WORD,
+    STATE_FINISHED
+};
 
-    public: 
+// Tipo Wordscounter: procesa cantidad de palabras dentro de un archivo.
+class Wordscounter {
+private:
+    size_t words;
+    WordscounterState current_state;
+    /// Notar como ahora este metodo es privado
+    void set_next_state(char c);
+    /// busca el caracter c en un set predefinido de caracteres delimitadores
+    bool in_delim_words(char c);
+public:
     Wordscounter();
 
     // Retorna la cantidad de palabras procesadas
-    size_t get_words();
-
-    // Procesa el contenido de text_file, contando sus palabras. Pos: si el archivo no se puede abrir devuelve -1 si lo puede abrir devuelve 0
+    /// const correctness
+    size_t get_words() const;
     void process(std::istream& text_file);
 
-    // Compara el caracter leído c y define el nuevo estado.
-    char next_state(char state, char c);
-}
-;
+    ~Wordscounter() = default;
+};
 #endif

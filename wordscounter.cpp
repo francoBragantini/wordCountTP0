@@ -1,49 +1,52 @@
 #include "wordscounter.h"
 #include <string>
-#include <string.h>
+#include <string_view>
 #include <fstream>
 
-#define DELIM_WORDS " ,.;:\n"
+Wordscounter::Wordscounter()
+: words(0), current_state(WordscounterState::STATE_WAITING_WORD) {}
 
-
-Wordscounter::Wordscounter(){
-    this->words = 0;
-}
-
-size_t Wordscounter::get_words() {
+/// Const correctness: sabemos que no vamos a modificar al objeto
+/// Agregar const previene que lo modifiquemos inadvertidamente
+size_t Wordscounter::get_words() const {
     return this->words;
 }
 
 void Wordscounter::process(std::istream& text_file) {
-    char state = 0;
     do {
         char c = text_file.get();
-        state = next_state(state, c);
-    } while (state != 2);
+        set_next_state(c);
+    } while (current_state != STATE_FINISHED);
 }
 
-char Wordscounter::next_state(char state, char c) {
-
-    char next_state = state;
-
-    if(state == 0) {
-        if(c == EOF)
-        { 
-            next_state = 2;
-        } 
-        else if (strchr(DELIM_WORDS, c) == NULL) 
-            next_state = 1;
-        
-    } else if (state == 1){
-        if ( c == EOF ) { 
-            next_state = 2;
-            words++;
-        } else if ( strchr(DELIM_WORDS, c) != NULL) {
-            words++;
-            next_state = 0;
+void Wordscounter::set_next_state(char c) {
+    if (current_state == STATE_WAITING_WORD) {
+        if (c == EOF) { 
+            current_state = STATE_FINISHED;
+        } else if (!in_delim_words(c)) {
+            current_state = STATE_IN_WORD;
+        }
+    } else if (current_state == STATE_IN_WORD) {
+        if (c == EOF) {
+            current_state = STATE_FINISHED;
+            ++words;
+        } else if (in_delim_words(c)) {
+            ++words;
+            current_state = STATE_WAITING_WORD;
         }
     }
+}
 
-    return next_state ;
+/// reemplazo de #define por un tipo propio de C++ con bajo overhead
+bool Wordscounter::in_delim_words(char c) {
+    /// Aca cambiamos el #define por un construct de mayor nivel
+    /// Es tipado y que no agrega overhead considerable
+    /// Este pequeño cambio otorga una API de mayor nivel que el header string.h
+    /// Aprovechen las herramientas del lenguaje!
 
+    /// https://en.cppreference.com/w/cpp/string/basic_string_view
+    /// https://en.cppreference.com/w/cpp/language/constexpr
+
+    static constexpr std::string_view delim_words = " ,.;:\n";
+    return delim_words.find(c) != std::string::npos;
 }
